@@ -1,0 +1,22 @@
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: liparibank-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: liparibank
+      POSTGRES_PASSWORD: liparibank_dev_2026
+      POSTGRES_DB: liparibank_digital
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liparibank -d liparibank_digital"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
