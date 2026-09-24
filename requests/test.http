@@ -1,0 +1,71 @@
+@baseUrl = http://localhost:3000
+@accountId = 
+@customerId = 
+
+### ─── HEALTH CHECK ───
+GET {{baseUrl}}/health
+
+### ─── ACCOUNTS ───
+
+### 1. GET all accounts
+GET {{baseUrl}}/api/accounts
+
+### 2. POST create account
+POST {{baseUrl}}/api/accounts
+Content-Type: application/json
+
+{
+  "iban": "IT60X0542811101000000123456",
+  "balance": 1500.50,
+  "type": "CHECKING",
+  "status": "ACTIVE",
+  "ownerId": "owner-001"
+}
+
+### 3. GET account by ID (sostituisci @accountId)
+GET {{baseUrl}}/api/accounts/{{accountId}}
+
+### 4. PUT update account
+PUT {{baseUrl}}/api/accounts/{{accountId}}
+Content-Type: application/json
+
+{
+  "balance": 2500.75,
+  "status": "ACTIVE"
+}
+
+### 5. DELETE account
+DELETE {{baseUrl}}/api/accounts/{{accountId}}
+
+### ─── CUSTOMERS ───
+
+### 6. GET all customers
+GET {{baseUrl}}/api/customers
+
+### 7. POST create customer
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{
+  "fiscalCode": "RSSMRA90A01H501Z",
+  "firstName": "Mario",
+  "lastName": "Rossi",
+  "email": "mario.rossi@example.com",
+  "phone": "+39 333 1234567",
+  "status": "ACTIVE"
+}
+
+### 8. GET customer by ID (sostituisci @customerId)
+GET {{baseUrl}}/api/customers/{{customerId}}
+
+### 9. PUT update customer
+PUT {{baseUrl}}/api/customers/{{customerId}}
+Content-Type: application/json
+
+{
+  "email": "mario.rossi.updated@example.com",
+  "status": "INACTIVE"
+}
+
+### 10. DELETE customer
+DELETE {{baseUrl}}/api/customers/{{customerId}}

@@ -1,7 +1,7 @@
-import { Account, AccountStatus, AccountType } from './account.types';
-import { AccountRepository } from './account.repository';
-import { UUID } from '../../types/common';
-import { randomUUID } from 'crypto';
+import { Account, AccountStatus, AccountType } from "./account.types";
+import { AccountRepository } from "./account.repository";
+import { UUID } from "../../types/common";
+import { randomUUID } from "crypto";
 
 /**
  * DTO per l'aggiornamento di un Account.
@@ -22,14 +22,29 @@ export interface UpdateAccountDto {
  * - Logica di business (validazione, trasformazione)
  * - Coordinamento tra repository e logica
  * - Nessuna logica HTTP (eccezioni generiche)
- * 
+ *
  * Usa DI: il repository è iniettato nel constructor.
  */
 export class AccountService {
-  create(arg0: { iban: string; holderName: string; balance: number; accountType: any; customerId: string; }) {
-    throw new Error('Method not implemented.');
-  }
   constructor(private readonly repo: AccountRepository) {}
+  async create(data: {
+    iban: string;
+    balance: number;
+    type: AccountType;
+    status: AccountStatus;
+    ownerId: string;
+  }): Promise<Account> {
+    const account: Account = {
+      id: randomUUID(),
+      iban: data.iban,
+      balance: data.balance,
+      type: data.type,
+      status: data.status,
+      ownerId: data.ownerId,
+      createdAt: new Date(),
+    };
+    return this.repo.save(account);
+  }
 
   /**
    * Recupera tutti gli account.
