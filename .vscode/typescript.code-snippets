@@ -1,0 +1,23 @@
+{
+  "New Zod schema + type": {
+    "prefix": "zods",
+    "scope": "typescript",
+    "body": [
+      "export const ${1:entity}Schema = z.object({",
+      "  $0",
+      "});",
+      "export type ${1/(.*)/${1:/capitalize}/} = z.infer<typeof ${1:entity}Schema>;"
+    ],
+    "description": "Crea uno schema Zod e il tipo TS inferito"
+  },
+  "AsyncHandler controller": {
+    "prefix": "ahc",
+    "scope": "typescript",
+    "body": [
+      "${1:methodName} = asyncHandler(async (req: Request, res: Response) => {",
+      "  $0",
+      "  res.json({ success: true, data: result });",
+      "});"
+    ]
+  }
+}

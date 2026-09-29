@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enum ───
+enum AccountType {
+  CHECKING
+  SAVINGS
+  DEPOSIT
+}
+
+enum AccountStatus {
+  ACTIVE
+  BLOCKED
+  CLOSED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+// ─── Models ───
+model Customer {
+  id         String   @id @default(uuid())
+  fiscalCode String   @unique @map("fiscal_code")
+  firstName  String   @map("first_name")
+  lastName   String   @map("last_name")
+  email      String   @unique
+  phone      String?
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now()) @map("created_at")
+  accounts   Account[]  // Relazione 1:N — un Customer ha molti Account
+
+  @@map("customers")
+}
+
+model Account {
+  id          String        @id @default(uuid())
+  iban        String        @unique
+  holderName  String        @map("holder_name")
+  balance     Decimal       @default(0) @db.Decimal(15, 2) // ⚠️ Decimal per soldi, MAI Float
+  accountType AccountType   @map("account_type")
+  status      AccountStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  customerId  String        @map("customer_id")
+  customer    Customer      @relation(fields: [customerId], references: [id])
+
+  sentTransactions     Transaction[] @relation("FromAccount")
+  receivedTransactions Transaction[] @relation("ToAccount")
+
+  @@map("accounts")
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  amount      Decimal           @db.Decimal(15, 2)
+  description String
+  status      TransactionStatus @default(PENDING)
+  executedAt  DateTime          @default(now()) @map("executed_at")
+
+  fromAccountId String  @map("from_account_id")
+  toAccountId   String  @map("to_account_id")
+  fromAccount   Account @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount     Account @relation("ToAccount", fields: [toAccountId], references: [id])
+
+  @@map("transactions")
+}
