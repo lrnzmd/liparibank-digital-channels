@@ -2,17 +2,31 @@ import { Router } from "express";
 import { AccountController } from "./account.controller";
 import { AccountService } from "./account.service";
 import { InMemoryAccountRepository } from "./account.repository";
+import { validate } from "../../middleware/validate";
+import { createAccountSchema, updateAccountSchema } from "./account.types";
 
+const router = Router();
+
+// Istanzia le dipendenze (Giorno 5: userà Prisma)
 const repository = new InMemoryAccountRepository();
 const service = new AccountService(repository);
 const controller = new AccountController(service);
 
-const router = Router();
+// ─── Routes con validazione ───
+router.post("/", 
+  validate(createAccountSchema, "body"),
+  controller.create
+);
 
-router.get("/", (req, res) => controller.getAll(req, res));
-router.get("/:id", (req, res) => controller.getById(req, res));
-router.post("/", (req, res) => controller.create(req, res));
-router.put("/:id", (req, res) => controller.update(req, res));
-router.delete("/:id", (req, res) => controller.delete(req, res));
+router.get("/", controller.getAll);
+
+router.get("/:id", controller.getById);
+
+router.put("/:id",
+  validate(updateAccountSchema, "body"),
+  controller.update
+);
+
+router.delete("/:id", controller.delete);
 
 export default router;

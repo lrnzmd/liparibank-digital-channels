@@ -26,6 +26,21 @@ export interface UpdateAccountDto {
  * Usa DI: il repository è iniettato nel constructor.
  */
 export class AccountService {
+  createAccount(body: any) {
+    throw new Error("Method not implemented.");
+  }
+  getAccountById(id: string | string[] | undefined) {
+    throw new Error("Method not implemented.");
+  }
+  getAllAccounts() {
+    throw new Error("Method not implemented.");
+  }
+  updateAccount(id: string | string[] | undefined, body: any) {
+    throw new Error("Method not implemented.");
+  }
+  deleteAccount(id: string | string[] | undefined) {
+    throw new Error("Method not implemented.");
+  }
   constructor(private readonly repo: AccountRepository) {}
   async create(data: {
     iban: string;

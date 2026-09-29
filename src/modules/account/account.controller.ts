@@ -1,52 +1,84 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import { AccountService } from "./account.service";
-import { UUID } from "../../types/common";
+import { NotFoundError } from "../../routes/errors";
+
+const asyncHandler =
+  (
+    handler: (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
+  ): RequestHandler =>
+  (req, res, next) => {
+    handler(req, res, next).catch(next);
+  };
 
 export class AccountController {
   constructor(private readonly service: AccountService) {}
 
-  async getAll(req: Request, res: Response): Promise<void> {
-    const accounts = await this.service.getAll();
-    res.status(200).json({ data: accounts });
-  }
+  /**
+   * POST /api/accounts
+   * Crea un nuovo account (body validato da middleware validate())
+   */
+  create = asyncHandler(async (req: Request, res: Response) => {
+    const account = await this.service.createAccount(req.body);
+    res.status(201).json({
+      success: true,
+      data: account,
+    });
+  });
 
-  async getById(req: Request, res: Response): Promise<void> {
-    const id = req.params.id as UUID;
-    try {
-      const account = await this.service.getById(id);
-      res.status(200).json({ data: account });
-    } catch (error) {
-      res.status(404).json({ error: "Account not found" });
-    }
-  }
+  /**
+   * GET /api/accounts/:id
+   * Recupera account per ID, butta NotFoundError se non esiste
+   */
+  getById = asyncHandler(async (req: Request, res: Response) => {
+    const account = await this.service.getAccountById(req.params.id);
 
-  async create(req: Request, res: Response): Promise<void> {
-    try {
-      const account = await this.service.create(req.body);
-      res.status(201).json({ data: account });
-    } catch (error) {
-      res.status(400).json({ error: "Failed to create account" });
+    if (!account) {
+      throw new NotFoundError(`Account con ID ${req.params.id} non trovato`);
     }
-  }
 
-  async update(req: Request, res: Response): Promise<void> {
-    const id = req.params.id as UUID;
-    try {
-      const account = await this.service.update(id, req.body);
-      res.status(200).json({ data: account });
-    } catch (error) {
-      res.status(404).json({ error: "Account not found" });
-    }
-  }
+    res.json({
+      success: true,
+      data: account,
+    });
+  });
 
-  // Implementa il metodo delete per rimuovere un account
-  async delete(req: Request, res: Response): Promise<void> {
-    const id = req.params.id as UUID;
-    const deleted = await this.service.delete(id);
-    if (!deleted) {
-      res.status(404).json({ error: "Account not found" });
-      return;
+  /**
+   * GET /api/accounts
+   */
+  getAll = asyncHandler(async (req: Request, res: Response) => {
+    const accounts = await this.service.getAllAccounts();
+    res.json({
+      success: true,
+      data: accounts,
+    });
+  });
+
+  /**
+   * PUT /api/accounts/:id
+   */
+  update = asyncHandler(async (req: Request, res: Response) => {
+    const account = await this.service.updateAccount(req.params.id, req.body);
+
+    if (!account) {
+      throw new NotFoundError(`Account con ID ${req.params.id} non trovato`);
     }
+
+    res.json({
+      success: true,
+      data: account,
+    });
+  });
+
+  /**
+   * DELETE /api/accounts/:id
+   */
+  delete = asyncHandler(async (req: Request, res: Response) => {
+    const success = await this.service.deleteAccount(req.params.id);
+
+    if (!success) {
+      throw new NotFoundError(`Account con ID ${req.params.id} non trovato`);
+    }
+
     res.status(204).send();
-  }
+  });
 }
