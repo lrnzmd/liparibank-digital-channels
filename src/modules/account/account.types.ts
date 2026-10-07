@@ -13,8 +13,8 @@ export const createAccountSchema = z.object({
     .string()
     .length(27, "IBAN italiano deve essere esattamente 27 caratteri")
     .regex(/^IT\d{2}[A-Z0-9]{23}$/, "IBAN non valido (formato: IT + 25 caratteri alfanumerici)"),
-  type: z.enum(["CHECKING", "SAVINGS", "BUSINESS"], {
-    message: "Tipo conto deve essere CHECKING, SAVINGS o BUSINESS",
+  type: z.enum(["CHECKING", "SAVINGS", "DEPOSIT"], {
+    message: "Tipo conto deve essere CHECKING, SAVINGS o DEPOSIT",
   }),
   initialBalance: z.number().nonnegative("Saldo iniziale non può essere negativo").default(0),
 });
@@ -30,6 +30,9 @@ export const updateAccountSchema = createAccountSchema.partial();
 export type CreateAccountDto = z.infer<typeof createAccountSchema>;
 export type UpdateAccountDto = z.infer<typeof updateAccountSchema>;
 
+export type AccountType = "CHECKING" | "SAVINGS" | "DEPOSIT";
+export type AccountStatus = "ACTIVE" | "BLOCKED" | "CLOSED";
+
 /**
  * Interfaccia del dominio (stored nel DB)
  */
@@ -37,14 +40,10 @@ export interface Account {
   id: string;
   ownerId: string;
   iban: string;
-  type: "CHECKING" | "SAVINGS" | "BUSINESS";
+  type: AccountType;
   balance: number;
-  status: "ACTIVE" | "FROZEN" | "CLOSED";
+  status: AccountStatus;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface AccountStatus {
-  accountId: string;
-  status: "ACTIVE" | "FROZEN" | "CLOSED";
-}

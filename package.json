@@ -17,6 +17,9 @@
     "prisma:reset": "prisma migrate reset --force",
     "postinstall": "prisma skills sync || exit 0"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

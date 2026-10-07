@@ -20,17 +20,12 @@ export const createCustomerSchema = z.object({
   email: z.email("Email non valida"),
   phone: z
     .string()
-    .regex(/^\+39\d{9,10}$/, "Telefono deve essere +39 + 9-10 cifre"),
+    .regex(/^\+39\d{9,10}$/, "Telefono deve essere +39 + 9-10 cifre")
+    .optional(),
   fiscalCode: z
     .string()
     .length(16, "Codice fiscale deve essere 16 caratteri")
     .regex(FISCAL_CODE_REGEX, "Codice fiscale non valido"),
-  dateOfBirth: z
-    .date("Data di nascita non valida (formato: YYYY-MM-DD)")
-    .transform(str => new Date(str)),
-  residenceAddress: z
-    .string()
-    .min(5, "Indirizzo deve avere almeno 5 caratteri"),
 });
 
 /**
@@ -44,6 +39,8 @@ export const updateCustomerSchema = createCustomerSchema.partial();
 export type CreateCustomerDto = z.infer<typeof createCustomerSchema>;
 export type UpdateCustomerDto = z.infer<typeof updateCustomerSchema>;
 
+export type CustomerStatus = "ACTIVE" | "INACTIVE" | "BLOCKED";
+
 /**
  * Interfaccia del dominio
  */
@@ -54,9 +51,8 @@ export interface Customer {
   email: string;
   phone: string;
   fiscalCode: string;
-  dateOfBirth: Date;
-  residenceAddress: string;
-  status: "ACTIVE" | "SUSPENDED" | "CLOSED";
+  status: CustomerStatus;
   createdAt: Date;
   updatedAt: Date;
 }
+

@@ -26,22 +26,60 @@ export interface UpdateAccountDto {
  * Usa DI: il repository è iniettato nel constructor.
  */
 export class AccountService {
-  createAccount(body: any) {
-    throw new Error("Method not implemented.");
-  }
-  getAccountById(id: string | string[] | undefined) {
-    throw new Error("Method not implemented.");
-  }
-  getAllAccounts() {
-    throw new Error("Method not implemented.");
-  }
-  updateAccount(id: string | string[] | undefined, body: any) {
-    throw new Error("Method not implemented.");
-  }
-  deleteAccount(id: string | string[] | undefined) {
-    throw new Error("Method not implemented.");
-  }
   constructor(private readonly repo: AccountRepository) {}
+
+  /**
+   * Crea un nuovo account (method usato dal controller).
+   */
+  async createAccount(body: any): Promise<Account> {
+    return this.create(body);
+  }
+
+  /**
+   * Recupera account per ID (method usato dal controller).
+   */
+  async getAccountById(id: string | string[] | undefined): Promise<Account | null> {
+    if (!id || typeof id !== "string") {
+      return null;
+    }
+    try {
+      return await this.getById(id);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Recupera tutti gli account (method usato dal controller).
+   */
+  async getAllAccounts(): Promise<Account[]> {
+    return this.getAll();
+  }
+
+  /**
+   * Aggiorna un account (method usato dal controller).
+   */
+  async updateAccount(id: string | string[] | undefined, body: any): Promise<Account | null> {
+    if (!id || typeof id !== "string") {
+      return null;
+    }
+    try {
+      return await this.update(id, body);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Elimina un account (method usato dal controller).
+   */
+  async deleteAccount(id: string | string[] | undefined): Promise<boolean> {
+    if (!id || typeof id !== "string") {
+      return false;
+    }
+    return this.delete(id);
+  }
+
   async create(data: {
     iban: string;
     balance: number;
@@ -49,6 +87,7 @@ export class AccountService {
     status: AccountStatus;
     ownerId: string;
   }): Promise<Account> {
+    const now = new Date();
     const account: Account = {
       id: randomUUID(),
       iban: data.iban,
@@ -56,7 +95,8 @@ export class AccountService {
       type: data.type,
       status: data.status,
       ownerId: data.ownerId,
-      createdAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     return this.repo.save(account);
   }

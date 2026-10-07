@@ -69,3 +69,41 @@ Content-Type: application/json
 
 ### 10. DELETE customer
 DELETE {{baseUrl}}/api/customers/{{customerId}}
+
+### ─── TRANSFERS ───
+
+### 11. POST create transfer (VALID - 100 da account1 a account2)
+POST {{baseUrl}}/api/transfers
+Content-Type: application/json
+
+{
+  "fromIban": "IT60X0542811101000000123456",
+  "toIban": "IT60X0542811101000000123457",
+  "amount": 100,
+  "description": "Transfer test - valid amount"
+}
+
+### 12. POST create transfer (INSUFFICIENT_FUNDS - 2000 da account2 che ha saldo 500)
+POST {{baseUrl}}/api/transfers
+Content-Type: application/json
+
+{
+  "fromIban": "IT60X0542811101000000123457",
+  "toIban": "IT60X0542811101000000123456",
+  "amount": 2000,
+  "description": "Transfer test - insufficient funds"
+}
+
+### 13. POST create transfer (NOT_FOUND - IBAN inesistente)
+POST {{baseUrl}}/api/transfers
+Content-Type: application/json
+
+{
+  "fromIban": "IT60X0542811101000000999999",
+  "toIban": "IT60X0542811101000000123456",
+  "amount": 100,
+  "description": "Transfer test - account not found"
+}
+
+### 14. GET all transfers
+GET {{baseUrl}}/api/transfers

@@ -1,16 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { z, ZodError } from "zod";
-import { AppError } from "../utils/errors";
-import logger from "../utils/logger";
 
 /**
  * Middleware centralizzato per error handling (4 argomenti obbligatori!).
  * Deve essere registrato come ULTIMO app.use() in app.ts
  * 
  * Processa:
- * 1. AppError (custom) → statusCode + code + message
- * 2. ZodError → 422 VALIDATION_ERROR
- * 3. Errori sconosciuti → 500 + log completo
+ * 1. ZodError → 422 VALIDATION_ERROR
+ * 2. Errori sconosciuti → 500
  */
 export const errorHandler = (
   err: unknown,
@@ -20,21 +17,9 @@ export const errorHandler = (
 ) => {
   const requestId = req.id || "unknown";
 
-  // 1️⃣ Errori custom AppError
-  if (err instanceof AppError) {
-    logger.warn(
-      { code: err.code, statusCode: err.statusCode, requestId },
-      err.message
-    );
-    return res.status(err.statusCode).json(err.toJSON());
-  }
-
-  // 2️⃣ Errori Zod (in caso sfuggano al middleware validate)
+  // Errori Zod (in caso sfuggano al middleware validate)
   if (err instanceof ZodError) {
-    logger.warn(
-      { code: "VALIDATION_ERROR", requestId, issues: err.issues },
-      "Validazione Zod fallita"
-    );
+    console.warn({ code: "VALIDATION_ERROR", requestId, issues: err.issues });
     return res.status(422).json({
       success: false,
       error: {
@@ -45,20 +30,16 @@ export const errorHandler = (
     });
   }
 
-  // 3️⃣ Errori sconosciuti (stack trace solo nei log, mai al client!)
-  logger.error(
-    { 
-      requestId,
-      method: req.method,
-      url: req.url,
-      error: err instanceof Error ? {
-        name: err.name,
-        message: err.message,
-        stack: err.stack
-      } : String(err)
-    },
-    "Unhandled error"
-  );
+  // Errori sconosciuti
+  console.error({
+    requestId,
+    method: req.method,
+    url: req.url,
+    error: err instanceof Error ? {
+      name: err.name,
+      message: err.message,
+    } : String(err)
+  });
 
   res.status(500).json({
     success: false,

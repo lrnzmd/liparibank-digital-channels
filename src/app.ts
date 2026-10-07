@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 import { errorHandler } from "./middleware/errorHandler";
 import accountRoutes from "./routes/accountRoutes";
 import customerRoutes from "./routes/customerRoutes";
-
+import transferRoutes from "./routes/transferRoutes";
 
 const app = express();
 
@@ -43,6 +43,7 @@ app.use((req: Request, res: Response, next: any) => {
 // ─── Routes ───
 app.use("/api/accounts", accountRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/transfers", transferRoutes);
 
 // ─── Health check ───
 app.get("/health", (req, res) => {

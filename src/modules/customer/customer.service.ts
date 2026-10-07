@@ -40,6 +40,7 @@ export class CustomerService {
     phone: string;
     status: CustomerStatus;
   }): Promise<Customer> {
+    const now = new Date();
     const customer: Customer = {
       id: randomUUID(),
       fiscalCode: data.fiscalCode,
@@ -48,7 +49,8 @@ export class CustomerService {
       email: data.email,
       phone: data.phone,
       status: data.status,
-      createdAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     return this.repo.save(customer);
   }

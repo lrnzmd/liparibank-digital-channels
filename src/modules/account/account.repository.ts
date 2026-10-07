@@ -7,6 +7,7 @@ import { UUID } from '../../types/common';
  */
 export interface AccountRepository {
   findById(id: UUID): Promise<Account | null>;
+  findByIban(iban: string): Promise<Account | null>;
   findAll(): Promise<Account[]>;
   save(account: Account): Promise<Account>;
   delete(id: UUID): Promise<boolean>;
@@ -59,6 +60,20 @@ export class InMemoryAccountRepository implements AccountRepository {
    */
   async delete(id: UUID): Promise<boolean> {
     return this.store.delete(id);
+  }
+
+  /**
+   * Cerca un account per IBAN.
+   * @param iban IBAN dell'account
+   * @returns Promise<Account | null>
+   */
+  async findByIban(iban: string): Promise<Account | null> {
+    for (const account of this.store.values()) {
+      if (account.iban === iban) {
+        return account;
+      }
+    }
+    return null;
   }
 
   /**

@@ -8,6 +8,12 @@ datasource db {
 }
 
 // ─── Enum ───
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
 enum AccountType {
   CHECKING
   SAVINGS
@@ -20,57 +26,59 @@ enum AccountStatus {
   CLOSED
 }
 
-enum TransactionStatus {
+enum TransferStatus {
   PENDING
   COMPLETED
   FAILED
-  REVERSED
 }
 
 // ─── Models ───
 model Customer {
-  id         String   @id @default(uuid())
-  fiscalCode String   @unique @map("fiscal_code")
-  firstName  String   @map("first_name")
-  lastName   String   @map("last_name")
-  email      String   @unique
+  id         String         @id @default(uuid())
+  fiscalCode String         @unique @map("fiscal_code")
+  firstName  String         @map("first_name")
+  lastName   String         @map("last_name")
+  email      String         @unique
   phone      String?
-  status     String   @default("ACTIVE")
-  createdAt  DateTime @default(now()) @map("created_at")
-  accounts   Account[]  // Relazione 1:N — un Customer ha molti Account
+  status     CustomerStatus @default(ACTIVE)
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  accounts   Account[]
 
   @@map("customers")
 }
 
 model Account {
-  id          String        @id @default(uuid())
-  iban        String        @unique
-  holderName  String        @map("holder_name")
-  balance     Decimal       @default(0) @db.Decimal(15, 2) // ⚠️ Decimal per soldi, MAI Float
-  accountType AccountType   @map("account_type")
-  status      AccountStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now()) @map("created_at")
+  id        String        @id @default(uuid())
+  iban      String        @unique
+  balance   Decimal       @default(0) @db.Decimal(15, 2)
+  type      AccountType   @map("account_type")
+  status    AccountStatus @default(ACTIVE)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
 
-  customerId  String        @map("customer_id")
-  customer    Customer      @relation(fields: [customerId], references: [id])
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  sentTransactions     Transaction[] @relation("FromAccount")
-  receivedTransactions Transaction[] @relation("ToAccount")
+  fromTransfers Transfer[] @relation("FromAccount")
+  toTransfers   Transfer[] @relation("ToAccount")
 
+  @@index([customerId, status])
   @@map("accounts")
 }
 
-model Transaction {
-  id          String            @id @default(uuid())
-  amount      Decimal           @db.Decimal(15, 2)
-  description String
-  status      TransactionStatus @default(PENDING)
-  executedAt  DateTime          @default(now()) @map("executed_at")
+model Transfer {
+  id        String         @id @default(uuid())
+  amount    Decimal        @db.Decimal(15, 2)
+  description String       @db.VarChar(140)
+  status    TransferStatus @default(PENDING)
+  createdAt DateTime       @default(now()) @map("created_at")
+  executedAt DateTime?      @map("executed_at")
 
   fromAccountId String  @map("from_account_id")
   toAccountId   String  @map("to_account_id")
-  fromAccount   Account @relation("FromAccount", fields: [fromAccountId], references: [id])
-  toAccount     Account @relation("ToAccount", fields: [toAccountId], references: [id])
+  fromAccount   Account @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Restrict)
+  toAccount     Account @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
 
-  @@map("transactions")
+  @@map("transfers")
 }
