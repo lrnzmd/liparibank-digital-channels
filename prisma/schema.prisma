@@ -32,7 +32,26 @@ enum TransferStatus {
   FAILED
 }
 
+enum Role {
+  USER
+  OPERATOR
+  ADMIN
+}
+
 // ─── Models ───
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(USER)
+  customerId   String?  @map("customer_id") @unique
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
 model Customer {
   id         String         @id @default(uuid())
   fiscalCode String         @unique @map("fiscal_code")
@@ -44,6 +63,7 @@ model Customer {
   createdAt  DateTime       @default(now()) @map("created_at")
   updatedAt  DateTime       @updatedAt @map("updated_at")
   accounts   Account[]
+  user       User?
 
   @@map("customers")
 }

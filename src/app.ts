@@ -1,8 +1,12 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { randomUUID } from "crypto";
 import { errorHandler } from "./middleware/errorHandler";
+import { authenticate } from "./middleware/authenticate";
+import { authorize } from "./middleware/authorize";
+import authRoutes from "./modules/auth/auth.routes";
 import accountRoutes from "./routes/accountRoutes";
 import customerRoutes from "./routes/customerRoutes";
 import transferRoutes from "./routes/transferRoutes";
@@ -13,6 +17,7 @@ const app = express();
 app.use(helmet()); // 1. Security headers
 app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
 app.use(express.json());
+app.use(cookieParser()); // Parse cookies
 
 // ─── Request ID middleware ───
 app.use((req: Request, res: Response, next: any) => {
@@ -41,9 +46,10 @@ app.use((req: Request, res: Response, next: any) => {
 });
 
 // ─── Routes ───
-app.use("/api/accounts", accountRoutes);
-app.use("/api/customers", customerRoutes);
-app.use("/api/transfers", transferRoutes);
+app.use("/api/auth", authRoutes); // Public routes
+app.use("/api/accounts", authenticate, accountRoutes); // Protected routes
+app.use("/api/customers", authenticate, customerRoutes); // Protected routes
+app.use("/api/transfers", authenticate, transferRoutes); // Protected routes
 
 // ─── Health check ───
 app.get("/health", (req, res) => {

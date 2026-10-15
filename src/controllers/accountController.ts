@@ -14,7 +14,8 @@ export class AccountController {
 
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const account = await this.service.getAccountById(req.params.id);
+      const id = req.params.id as string;
+      const account = await this.service.getAccountById(id);
       res.json({ success: true, data: account });
     } catch (error) { next(error); }
   };
@@ -28,9 +29,10 @@ export class AccountController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const id = req.params.id as string;
       // Per ora: solo update del balance come esempio
       const { balance } = req.body;
-      const account = await this.service.getAccountById(req.params.id);
+      const account = await this.service.getAccountById(id);
       // In un progetto reale: service.updateAccount(id, dto)
       res.json({ success: true, data: { ...account, balance } });
     } catch (error) { next(error); }
@@ -38,7 +40,8 @@ export class AccountController {
 
   delete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await this.service.getAccountById(req.params.id); // Verifica che esista
+      const id = req.params.id as string;
+      await this.service.getAccountById(id); // Verifica che esista
       res.sendStatus(204);
     } catch (error) { next(error); }
   };

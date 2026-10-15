@@ -2,6 +2,7 @@ import { Router } from "express";
 import { CustomerController } from "./customer.controller";
 import { InMemoryCustomerRepository } from "./customer.repository";
 import { CustomerService } from "./customer.service";
+import { authorize } from "../../middleware/authorize";
 
 /**
  * Composition root per il modulo Customer.
@@ -26,6 +27,6 @@ router.get("/", (req, res) => controller.getAll(req, res));
 router.get("/:id", (req, res) => controller.getById(req, res));
 router.post("/", (req, res) => controller.create(req, res));
 router.put("/:id", (req, res) => controller.update(req, res));
-router.delete("/:id", (req, res) => controller.delete(req, res));
+router.delete("/:id", authorize("ADMIN"), (req, res) => controller.delete(req, res));
 
 export default router;

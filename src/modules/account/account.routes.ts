@@ -3,6 +3,7 @@ import { AccountController } from "./account.controller";
 import { AccountService } from "./account.service";
 import { InMemoryAccountRepository } from "./account.repository";
 import { validate } from "../../middleware/validate";
+import { authorize } from "../../middleware/authorize";
 import { createAccountSchema, updateAccountSchema } from "./account.types";
 
 const router = Router();
@@ -27,6 +28,6 @@ router.put("/:id",
   controller.update
 );
 
-router.delete("/:id", controller.delete);
+router.delete("/:id", authorize("ADMIN"), controller.delete);
 
 export default router;
