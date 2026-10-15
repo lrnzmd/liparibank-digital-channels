@@ -1,0 +1,21 @@
+# docker-compose.test.yml
+# Database temporaneo per i test — usa tmpfs per velocità
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: liparibank-test-db
+    restart: no
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: liparibank
+      POSTGRES_PASSWORD: liparibank_dev_2026
+      POSTGRES_DB: liparibank_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liparibank -d liparibank_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
