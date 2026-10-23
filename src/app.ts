@@ -2,14 +2,19 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import swaggerUi from "swagger-ui-express";
 import { randomUUID } from "crypto";
 import { errorHandler } from "./middleware/errorHandler";
 import { authenticate } from "./middleware/authenticate";
 import { authorize } from "./middleware/authorize";
+import { swaggerSpec } from "./config/swagger";
 import authRoutes from "./modules/auth/auth.routes";
 import accountRoutes from "./routes/accountRoutes";
 import customerRoutes from "./routes/customerRoutes";
 import transferRoutes from "./routes/transferRoutes";
+import kycRoutes from "./modules/kyc/kyc.routes";
+import reportRoutes from "./routes/reportRoutes";
+import aiRoutes from "./routes/aiRoutes";
 
 const app = express();
 
@@ -18,6 +23,9 @@ app.use(helmet()); // 1. Security headers
 app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
 app.use(express.json());
 app.use(cookieParser()); // Parse cookies
+
+// Serve uploaded files (per KYC documents)
+app.use("/uploads", express.static("uploads"));
 
 // ─── Request ID middleware ───
 app.use((req: Request, res: Response, next: any) => {
@@ -45,11 +53,16 @@ app.use((req: Request, res: Response, next: any) => {
   next();
 });
 
+// ─── Swagger/OpenAPI ───
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // ─── Routes ───
 app.use("/api/auth", authRoutes); // Public routes
 app.use("/api/accounts", authenticate, accountRoutes); // Protected routes
-app.use("/api/customers", authenticate, customerRoutes); // Protected routes
+app.use("/api/customers", authenticate, customerRoutes); // Protected routes (con KYC)
 app.use("/api/transfers", authenticate, transferRoutes); // Protected routes
+app.use("/api/reports", reportRoutes); // Protected routes (con authorize)
+app.use("/api/ai", aiRoutes); // Protected routes (con authenticate)
 
 // ─── Health check ───
 app.get("/health", (req, res) => {

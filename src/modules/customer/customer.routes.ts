@@ -3,6 +3,7 @@ import { CustomerController } from "./customer.controller";
 import { InMemoryCustomerRepository } from "./customer.repository";
 import { CustomerService } from "./customer.service";
 import { authorize } from "../../middleware/authorize";
+import kycRoutes from "../kyc/kyc.routes";
 
 /**
  * Composition root per il modulo Customer.
@@ -28,5 +29,8 @@ router.get("/:id", (req, res) => controller.getById(req, res));
 router.post("/", (req, res) => controller.create(req, res));
 router.put("/:id", (req, res) => controller.update(req, res));
 router.delete("/:id", authorize("ADMIN"), (req, res) => controller.delete(req, res));
+
+// Registra KYC routes nested
+router.use("/", kycRoutes);
 
 export default router;

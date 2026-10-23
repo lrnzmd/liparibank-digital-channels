@@ -62,9 +62,12 @@ model Customer {
   status     CustomerStatus @default(ACTIVE)
   createdAt  DateTime       @default(now()) @map("created_at")
   updatedAt  DateTime       @updatedAt @map("updated_at")
+  deletedAt  DateTime?      @map("deleted_at")
   accounts   Account[]
   user       User?
+  kycDocuments KycDocument[]
 
+  @@index([deletedAt])
   @@map("customers")
 }
 
@@ -76,6 +79,7 @@ model Account {
   status    AccountStatus @default(ACTIVE)
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
+  deletedAt DateTime?      @map("deleted_at")
 
   customerId String   @map("customer_id")
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -84,6 +88,7 @@ model Account {
   toTransfers   Transfer[] @relation("ToAccount")
 
   @@index([customerId, status])
+  @@index([deletedAt])
   @@map("accounts")
 }
 
@@ -101,4 +106,17 @@ model Transfer {
   toAccount     Account @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
 
   @@map("transfers")
+}
+
+model KycDocument {
+  id         String   @id @default(uuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fileName   String   @map("file_name")
+  mimeType   String   @map("mime_type")
+  sizeBytes  Int      @map("size_bytes")
+  storageUrl String   @map("storage_url")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  @@map("kyc_documents")
 }

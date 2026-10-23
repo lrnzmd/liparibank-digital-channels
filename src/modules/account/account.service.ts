@@ -2,6 +2,7 @@ import { Account, AccountStatus, AccountType } from "./account.types";
 import { AccountRepository } from "./account.repository";
 import { UUID } from "../../types/common";
 import { randomUUID } from "crypto";
+import prisma from "../../config/prisma";
 
 /**
  * DTO per l'aggiornamento di un Account.
@@ -78,6 +79,70 @@ export class AccountService {
       return false;
     }
     return this.delete(id);
+  }
+
+  /**
+   * Soft delete: setta deletedAt invece di eliminare fisicamente
+   */
+  async softDeleteAccount(id: string): Promise<boolean> {
+    try {
+      const account = await prisma.account.findUnique({
+        where: { id },
+      });
+
+      if (!account) {
+        return false;
+      }
+
+      await prisma.account.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error soft deleting account:", error);
+      return false;
+    }
+  }
+
+  /**
+   * List accounts con paginazione offset-based
+   */
+  async listAccountsWithPagination(options: {
+    where?: any;
+    skip: number;
+    take: number;
+    sortBy: "createdAt" | "balance" | "iban";
+    order: "asc" | "desc";
+  }): Promise<any[]> {
+    return prisma.account.findMany({
+      where: options.where,
+      skip: options.skip,
+      take: options.take,
+      orderBy: {
+        [options.sortBy]: options.order,
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Count accounts (con filtri)
+   */
+  async countAccounts(where?: any): Promise<number> {
+    return prisma.account.count({
+      where,
+    });
   }
 
   async create(data: {

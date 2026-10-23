@@ -7,3 +7,6 @@ coverage/
 /.agents
 .jest-cache/
 *.test.ts.snap
+uploads/
+*.pem
+*.key

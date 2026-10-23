@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { TransferService, NotFoundError, InsufficientFundsError } from "./transfer.service";
 import { createTransferSchema } from "./transfer.types";
+import { listTransfersQuerySchema } from "./transfer.schemas";
+import { ValidationError } from "../../routes/errors";
+import prisma from "../../config/prisma";
 
 /**
  * Controller per le operazioni di Transfer.
@@ -120,5 +123,90 @@ export class TransferController {
       }
     }
   }
-}
 
+  /**
+   * GET /api/transfers/feed
+   * Cursor-based pagination per feed movimenti
+   * Query: ?accountId=<uuid>&cursor=<transferId>&limit=20
+   */
+  async getTransfersFeed(req: Request, res: Response): Promise<void> {
+    try {
+      // Valida query params
+      const parseResult = listTransfersQuerySchema.safeParse(req.query);
+      if (!parseResult.success) {
+        throw new ValidationError("Query params non validi", {
+          errors: parseResult.error.flatten(),
+        });
+      }
+
+      const { accountId, cursor, limit } = parseResult.data;
+
+      // Verifica che l'account esista
+      const account = await prisma.account.findUnique({
+        where: { id: accountId },
+      });
+
+      if (!account) {
+        throw new ValidationError("Account non trovato", { field: "accountId" });
+      }
+
+      // Query con cursor pagination
+      const transfers = await prisma.transfer.findMany({
+        where: {
+          OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+        },
+        cursor: cursor ? { id: cursor } : undefined,
+        skip: cursor ? 1 : 0, // Skip il cursor stesso
+        take: limit,
+        orderBy: { executedAt: "desc" },
+        include: {
+          fromAccount: {
+            select: {
+              id: true,
+              iban: true,
+              customer: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+          toAccount: {
+            select: {
+              id: true,
+              iban: true,
+              customer: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Calcola il nextCursor
+      const nextCursor =
+        transfers.length === limit ? transfers[transfers.length - 1]?.id : null;
+
+      res.json({
+        data: transfers,
+        meta: {
+          nextCursor,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+          details: error.details,
+        });
+      } else {
+        throw error;
+      }
+    }
+  }
+}

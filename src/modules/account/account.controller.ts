@@ -1,6 +1,7 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { AccountService } from "./account.service";
-import { NotFoundError } from "../../routes/errors";
+import { NotFoundError, ValidationError } from "../../routes/errors";
+import { listAccountsQuerySchema } from "./account.schemas";
 
 const asyncHandler =
   (
@@ -44,12 +45,50 @@ export class AccountController {
 
   /**
    * GET /api/accounts
+   * Pagination offset-based con filtri e sorting
+   * Query: ?page=1&pageSize=20&status=ACTIVE&type=CHECKING&sortBy=createdAt&order=desc
    */
   getAll = asyncHandler(async (req: Request, res: Response) => {
-    const accounts = await this.service.getAllAccounts();
+    // Valida query params con Zod
+    const parseResult = listAccountsQuerySchema.safeParse(req.query);
+    if (!parseResult.success) {
+      throw new ValidationError("Query params non validi", {
+        errors: parseResult.error.flatten(),
+      });
+    }
+
+    const { page, pageSize, status, type, sortBy, order } = parseResult.data;
+
+    // Calcola offset
+    const offset = (page - 1) * pageSize;
+
+    // Costruisci il where filter (whitelist esplicita)
+    const where: any = {};
+    if (status) where.status = status;
+    if (type) where.type = type;
+
+    // Esegui la query con paginazione
+    const [accounts, total] = await Promise.all([
+      this.service.listAccountsWithPagination({
+        where,
+        skip: offset,
+        take: pageSize,
+        sortBy,
+        order,
+      }),
+      this.service.countAccounts(where),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
+
     res.json({
-      success: true,
       data: accounts,
+      meta: {
+        total,
+        page,
+        pageSize,
+        totalPages,
+      },
     });
   });
 
@@ -71,14 +110,17 @@ export class AccountController {
 
   /**
    * DELETE /api/accounts/:id
+   * Soft delete: setta deletedAt instead of hard delete
    */
   delete = asyncHandler(async (req: Request, res: Response) => {
-    const success = await this.service.deleteAccount(req.params.id);
+    const accountId = typeof req.params.id === "string" ? req.params.id : "";
+    const success = await this.service.softDeleteAccount(accountId);
 
     if (!success) {
-      throw new NotFoundError(`Account con ID ${req.params.id} non trovato`);
+      throw new NotFoundError(`Account con ID ${accountId} non trovato`);
     }
 
     res.status(204).send();
   });
 }
+

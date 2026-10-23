@@ -21,6 +21,12 @@ const controller = new TransferController(transferService);
 router.post("/", (req, res) => controller.createTransfer(req, res));
 
 /**
+ * GET /api/transfers/feed
+ * Cursor-based pagination per feed movimenti (deve essere PRIMA di /:id!)
+ */
+router.get("/feed", (req, res) => controller.getTransfersFeed(req, res));
+
+/**
  * GET /api/transfers/:id
  * Recupera un transfer per ID.
  */
