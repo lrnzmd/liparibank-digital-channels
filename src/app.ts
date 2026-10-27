@@ -69,6 +69,11 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// ─── Benchmark endpoint ───
+app.get("/hello", (req, res) => {
+  res.json({ ok: true });
+});
+
 // ─── Error handler (deve essere ULTIMO!) ───
 app.use(errorHandler);
 

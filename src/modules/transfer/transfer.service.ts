@@ -4,6 +4,7 @@ import { TransferRepository } from "./transfer.repository";
 import { AccountRepository } from "../account/account.repository";
 import { UUID } from "../../types/common";
 import { randomUUID } from "crypto";
+import { EventBus, PaymentCompletedEvent } from "../../utils/event-bus";
 
 /**
  * Errore personalizzato per transazioni fallite.
@@ -28,12 +29,14 @@ export class NotFoundError extends Error {
  * - Validazione dei conti
  * - Controllo del saldo
  * - Atomicità della transazione (aggiornamento saldi + salvataggio transfer)
+ * - Pubblicazione di domain event (PaymentCompleted)
  */
 export class TransferService {
   constructor(
     private readonly transferRepo: TransferRepository,
     private readonly accountRepo: AccountRepository,
     private readonly prisma: PrismaClient,
+    private readonly eventBus?: EventBus,
   ) {}
 
   /**
@@ -112,7 +115,7 @@ export class TransferService {
       },
     );
 
-    return {
+    const result: Transfer = {
       id: transferResult.id,
       fromAccountId: transferResult.fromAccountId,
       toAccountId: transferResult.toAccountId,
@@ -122,6 +125,30 @@ export class TransferService {
       createdAt: transferResult.createdAt,
       executedAt: transferResult.executedAt || undefined,
     };
+
+    // 4. Pubblica domain event (PaymentCompleted) per notificazioni, audit, ecc.
+    if (this.eventBus) {
+      const event: PaymentCompletedEvent = {
+        type: "PaymentCompleted",
+        aggregateId: result.id,
+        transferId: result.id,
+        fromAccountId: result.fromAccountId,
+        toAccountId: result.toAccountId,
+        amount: result.amount,
+        description: result.description,
+        executedAt: result.executedAt!,
+        timestamp: new Date(),
+      };
+
+      try {
+        await this.eventBus.publish(event);
+      } catch (error) {
+        // Log error ma non fallire il transfer (event publishing è best-effort)
+        console.error("Error publishing PaymentCompleted event:", error);
+      }
+    }
+
+    return result;
   }
 
   /**
