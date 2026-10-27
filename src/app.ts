@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import { authenticate } from "./middleware/authenticate";
 import { authorize } from "./middleware/authorize";
 import { swaggerSpec } from "./config/swagger";
+import prisma from "./config/prisma";
 import authRoutes from "./modules/auth/auth.routes";
 import accountRoutes from "./routes/accountRoutes";
 import customerRoutes from "./routes/customerRoutes";
@@ -64,9 +65,20 @@ app.use("/api/transfers", authenticate, transferRoutes); // Protected routes
 app.use("/api/reports", reportRoutes); // Protected routes (con authorize)
 app.use("/api/ai", aiRoutes); // Protected routes (con authenticate)
 
-// ─── Health check ───
-app.get("/health", (req, res) => {
+// ─── Health check (liveness - non verifica dipendenze) ───
+app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// ─── Readiness check (verifica database) ───
+app.get("/api/ready", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ready", timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error("Readiness check failed:", error);
+    res.status(503).json({ status: "not_ready", error: "Database connection failed" });
+  }
 });
 
 // ─── Benchmark endpoint ───

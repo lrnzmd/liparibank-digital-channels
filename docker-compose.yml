@@ -1,11 +1,10 @@
-# docker-compose.yml
+# docker-compose.yml - Stack completo con App, DB, Nginx
 services:
-  postgres:
+  # PostgreSQL Database
+  db:
     image: postgres:16-alpine
     container_name: liparibank-db
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: liparibank
       POSTGRES_PASSWORD: liparibank_dev_2026
@@ -17,6 +16,55 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - liparibank-net
+    expose:
+      - "5432"
+
+  # Express Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: liparibank-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://liparibank:liparibank_dev_2026@db:5432/liparibank_digital?schema=public
+      PORT: 3000
+      CORS_ORIGIN: http://localhost
+      JWT_ACCESS_SECRET: NDRkNTU5ZmMtYmVjYy00MzRhLThlZTYtMDJhNTk0NDViZWNjZDY3ZTA5YzktMDZkNC00ZDc1LWEwMzktYmIwYzZhNWI0YjYz
+      JWT_REFRESH_SECRET: YTJlODc3NDYtM2JmYi00MGM2LTk5ODAtY2NiOGY1NjYwZTk2OTYxMWEzMzItODA1Yy00ZGNjLTg5OWMtNTUyY2FiYTBkNGYz
+    volumes:
+      - ./uploads:/app/uploads
+      - ./docker-entrypoint.sh:/app/docker-entrypoint.sh
+    entrypoint: sh /app/docker-entrypoint.sh
+    networks:
+      - liparibank-net
+    expose:
+      - "3000"
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: liparibank-nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - liparibank-net
 
 volumes:
   pgdata:
+
+networks:
+  liparibank-net:
+    driver: bridge
+
